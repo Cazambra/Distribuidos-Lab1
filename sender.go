@@ -43,7 +43,7 @@ func main() {
 
 	failOnError(err, "Failed to declare a queue")
 	for i := 1; i < 5; i++{
-		body := packet{"0001","00001",15,"retail",2,"No Recibido"}
+		body := packet{"0002","00002",24,"retail",2,"Recibido"}
 		b,err := json.Marshal(body)
 
 		err = ch.Publish(
