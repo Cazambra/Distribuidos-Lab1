@@ -1,0 +1,57 @@
+syntax="proto3";
+
+package proto;
+
+message Order {
+    string id = 1;
+    string producto = 2;
+    int64 valor = 3;
+    string tienda = 4;
+    string destino = 5;
+    string tipo = 6;
+}
+
+message Register {
+    string timestamp = 1;
+    string idPacket = 2;
+    string tipo = 3; 
+    string nombre = 4;
+    int64 valor = 5;
+    string origen = 6;
+    string destino = 7;
+    int64 seguimiento = 8;
+}
+
+message Packet {
+    string idPacket = 1;
+    int64 seguimiento = 2;
+    string tipo = 3;
+    int64 valor = 4;
+    int64 intentos = 5;
+    string estado = 6;
+}
+
+message QuerySeguimiento {
+    int64 seguimiento = 1;
+}
+
+message ReplySeguimiento {
+    string estado = 1;
+}
+
+message ReadyAdvice {
+    string tipo = 1;
+    bool ult_ret = 2;
+}
+
+message Deliver {
+    string primero = 1;
+    string segundo = 2;
+}
+
+
+service LogisticaService {
+    rpc Request (QuerySeguimiento) returns (ReplySeguimiento);
+    rpc SendOrder (Order) returns (QuerySeguimiento);
+    rpc Ready (ReadyAdvice) returns (Deliver);
+}
