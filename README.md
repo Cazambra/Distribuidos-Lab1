@@ -16,7 +16,7 @@
   - **Entidad Camiones**
 
 ### Orden de ejecución
-* Primero se debe ejecutar  **Logística**, en segundo lugar **Finanzas**, luego **Clientes** o **Camiones** (estos dos últimos no importa el orden)
+* Primero se debe ejecutar  **Logística**, en segundo lugar **Finanzas**, luego **Clientes** y una vez que estén todos corriendo, ejecutar **Camiones**.
 
 ### Instrucciones de ejecución
 1. Dirigirse a la carpeta correspondiente a la entidad en la máquina que corresponda
@@ -38,7 +38,7 @@
         ~~~
 2. Ejecutar en el orden antes especificado para cada VM el siguiente comando:
    ~~~
-   make run
+   $ make run
    ~~~
 
 *Nota: En caso de cambiar los archivos .csv para distintos pedidos, basta con reemplazarlos y mantener los mismos nombres.*
