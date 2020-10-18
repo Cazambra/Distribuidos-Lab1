@@ -108,7 +108,7 @@ func main() {
 			err := json.Unmarshal(d.Body,&m)
 			inicial,enviostot,nocomplt = financiero(inicial,enviostot,nocomplt,m)
 
-			fmt.Println("Recibido desde logística: %+v", &m.String())
+			fmt.Println("Recibido desde logística: %+v", m)
 			failOnError(err,"FaileD to receive message")
 		}
 	}()
