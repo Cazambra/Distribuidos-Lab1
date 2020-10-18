@@ -7,6 +7,7 @@
 ### Distribución de Entidades en las VM's
 - Máquina 1: 10.10.28.41 
   - **Entidad Finanzas**
+  - Para finalizar y ver balance total y resumen de pedidos, presionar `Ctrl+C`
 - Máquina 2: 10.10.28.42 
   - **Entidad Logística**
 - Máquina 3: 10.10.28.43 
