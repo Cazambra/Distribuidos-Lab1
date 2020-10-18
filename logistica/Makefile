@@ -1,4 +1,4 @@
 build :
-	go build -o bin/main main.go
+	go build -o bin/main client/main.go
 run :
-	go run main.go
+	go run client/main.go
