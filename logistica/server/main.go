@@ -95,7 +95,7 @@ func (s *Server) Ready(ctx context.Context,adv *proto.ReadyAdvice) (*proto.Deliv
 	log.Println("Saliendo paquetes: %s", deli.Primero.GetIdPacket(), deli.Segundo.GetIdPacket())
 	//HAY QUE ACTUALIZAR EL ESTADO DE LOS PAQUETES QUE SALEN (!)
 	for i := range paquetes{
-		if paquetes[i].GetIdPacket() == deli.Primero.GetIdPacket(){
+		if  paquetes[i].GetIdPacket() == deli.Primero.GetIdPacket(){
 			paquetes[i].Estado = "en camino"
 			deli.Primero.Estado = "en camino"
 		} else if paquetes[i].GetIdPacket() == deli.Segundo.GetIdPacket(){
@@ -110,7 +110,19 @@ func (s *Server) Ready(ctx context.Context,adv *proto.ReadyAdvice) (*proto.Deliv
 
 //Delievered ...
 func (s *Server) Delivered(ctx context.Context,deli *proto.Deliver) (*proto.ReplySeguimiento, error){
-	return &proto.ReplySeguimiento{Estado: "chupamelpico"}, nil
+	// actualizar []paquetes
+	for i := range paquetes {
+		if paquetes[i].GetIdPacket() == deli.Primero.GetIdPacket() {
+			paquetes[i] = *deli.Primero
+		} else if paquetes[i].GetIdPacket() == deli.Segundo.GetIdPacket(){
+			paquetes[i] = *deli.Segundo
+		} else{
+			continue
+		}
+	}
+	//mandar a financiero
+
+	return &proto.ReplySeguimiento{Estado: ""}, nil
 }
 
 

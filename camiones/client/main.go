@@ -49,7 +49,6 @@ func Reparto(camion Camion) proto.Deliver {
 		case "normal", "prioritario": 
 			pen := int64(0)
 			for (packets.Primero.Estado == "no recibido" ||packets.Primero.Estado == "en camino") && packets.Primero.GetValor() > pen && packets.Primero.Intentos < 2{
-				fmt.Println("for")
 				prob := rand.Intn(10)
 				if prob <= 7 {
 					packets.Primero.Intentos += 1
@@ -180,7 +179,10 @@ func Reparto(camion Camion) proto.Deliver {
 				}
 			}
 	}
-	fmt.Println("PAQUETON: %+v", packets)
+	_, err = p.Delivered(context.Background(), packets)
+	if err != nil {
+		log.Fatalf("Error when calling Request: %s", err)
+	}
 	defer wg.Done()
 	return *packets
 }
