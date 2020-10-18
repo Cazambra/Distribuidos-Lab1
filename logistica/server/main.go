@@ -188,7 +188,6 @@ func (s *Server) Delivered(ctx context.Context,deli *proto.Deliver) (*proto.Repl
 
 //Request ...
 func (s *Server) Request(ctx context.Context, num_seguimiento *proto.QuerySeguimiento) (*proto.ReplySeguimiento, error) {
-	fmt.Println("Enviando seguimiento ")
 	//aqui hay que consultar por el .estado de los PAQUETES
 	var status string
 	for i := range paquetes {
@@ -240,6 +239,9 @@ func (s *Server) SendOrder(ctx context.Context, orden *proto.Order) (*proto.Quer
 		Intentos: int64(0),
 		Estado: "en bodega",
 	}
+	if new_pack.GetTipo() == "retail" {
+		new_pack.Seguimiento = int64(0)
+	}
 	paquetes = append(paquetes, new_pack)
 	//fmt.Println(new_pack, "\n")
 
@@ -253,7 +255,7 @@ func (s *Server) SendOrder(ctx context.Context, orden *proto.Order) (*proto.Quer
 	case "normal":
 		qN.PushBack(&new_pack)
 	}
-	return &proto.QuerySeguimiento{Seguimiento: seguimiento}, nil
+	return &proto.QuerySeguimiento{Seguimiento: new_pack.GetSeguimiento()}, nil
 }
 
 func main() {

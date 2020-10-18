@@ -5,7 +5,10 @@ import (
 	"encoding/csv"
 	"fmt"
 	"os"
+	"sync"
+	"time"
 	"strconv"
+	"math/rand"
 
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
@@ -23,6 +26,7 @@ type order struct {
 }
 
 var seguimientos []int64;
+var wg sync.WaitGroup
 
 func leer (path string) ([][]string, error) {
 	recordFile, err := os.Open(path)
@@ -42,7 +46,7 @@ func leer (path string) ([][]string, error) {
 	return records, err
 }
 
-func main() {
+func send_orders() {
 	//conexión
 	var conn *grpc.ClientConn
 	conn, err := grpc.Dial(":9000", grpc.WithInsecure())
@@ -51,71 +55,96 @@ func main() {
 	}
 	defer conn.Close()
 
-	
-	
 	fmt.Println("Ingrese tipo de cliente (pyme/retail): ")
 	var input string;
 	fmt.Scanln(&input)
 
-	switch input {
-	case "pyme":
-		recordspyme, _ := leer("../../pymes.csv")
-		for _, line := range recordspyme {
-			val, _ := strconv.ParseInt(line[2], 10, 64)
-			o := proto.Order{
-				Id: line[0],
-				Producto: line[1],
-				Valor: val,
-				Tienda: line[3],
-				Destino: line [4],
-				Tipo: line[5], //es 0 o 1 porque es pyme, RETAIL PARA EL OTRO CSV
+	for true {
+		switch input {
+		case "pyme":
+			recordspyme, _ := leer("../../pymes.csv")
+			for _, line := range recordspyme {
+				val, _ := strconv.ParseInt(line[2], 10, 64)
+				o := proto.Order{
+					Id: line[0],
+					Producto: line[1],
+					Valor: val,
+					Tienda: line[3],
+					Destino: line [4],
+					Tipo: line[5], //es 0 o 1 porque es pyme, RETAIL PARA EL OTRO CSV
+				}
+
+				p := proto.NewLogisticaServiceClient(conn)
+
+				//se envia la orden
+				response, err := p.SendOrder(context.Background(), &o)
+				if err !=nil {
+					log.Fatalf("Error when calling Request: %s", err)
+				}
+				log.Printf("Orden enviada: %s ", o.GetId(), " número de seguimiento: %d", response.Seguimiento)
+
+				seguimientos = append(seguimientos, response.Seguimiento)
+				time.Sleep(time.Second)
+
 			}
+		case "retail":
+			recordsret, _ := leer("../../retail.csv")
+			//aqui se envían las órdenes retail 1x1
+			for _, line := range recordsret {
+				val, _ := strconv.ParseInt(line[2], 10, 64)
+				o := proto.Order{
+					Id: line[0],
+					Producto: line[1],
+					Valor: val,
+					Tienda: line[3],
+					Destino: line [4],
+					Tipo: "retail",
+				}
 
-			p := proto.NewLogisticaServiceClient(conn)
+				p := proto.NewLogisticaServiceClient(conn)
 
-			response, err := p.SendOrder(context.Background(), &o)
-			if err !=nil {
-				log.Fatalf("Error when calling Request: %s", err)
+				//se envia la orden
+				response, err := p.SendOrder(context.Background(), &o)
+				if err !=nil {
+					log.Fatalf("Error when calling Request: %s", err)
+				}
+				log.Printf("Orden enviada: %s ", o.GetId())
+				time.Sleep(time.Second)
 			}
-			log.Printf("Número de seguimiento: %d", response.Seguimiento)
-
-			seguimientos = append(seguimientos, response.Seguimiento)
-
-			response2, err2 := p.Request(context.Background(), response)
-			if err2 !=nil {
-				log.Fatalf("Error when calling Request: %s", err2)
-			}
-			log.Printf("Estado: %s", response2.Estado)
-		}
-	case "retail":
-		recordsret, _ := leer("../../retail.csv")
-		//aqui se envían las órdenes retail 1x1
-		for _, line := range recordsret {
-			val, _ := strconv.ParseInt(line[2], 10, 64)
-			o := proto.Order{
-				Id: line[0],
-				Producto: line[1],
-				Valor: val,
-				Tienda: line[3],
-				Destino: line [4],
-				Tipo: "retail",
-			}
-
-			p := proto.NewLogisticaServiceClient(conn)
-
-			response, err := p.SendOrder(context.Background(), &o)
-			if err !=nil {
-				log.Fatalf("Error when calling Request: %s", err)
-			}
-			log.Printf("Seguimiento: %d", response.Seguimiento)
-
-			seguimientos = append(seguimientos, response.Seguimiento)
-
-			response2, err2 := p.Request(context.Background(), response)
-			if err2 !=nil {
-				log.Fatalf("Error when calling Request: %s", err2)
-			}
-			log.Printf("Estado: %s", response2.Estado)
 		}
 	}
+	defer wg.Done()
+}
+
+func consultar_estado() {
+	time.Sleep(10*time.Second)
+	//conexión
+	var conn *grpc.ClientConn
+	conn, err := grpc.Dial(":9000", grpc.WithInsecure())
+	if err != nil {
+		log.Fatalf("did not connect: %s", err)
+	}
+	defer conn.Close()
+
+	p := proto.NewLogisticaServiceClient(conn)
+
+	//se consulta por el estado
+	for true{
+		i := rand.Intn(range seguimientos)
+		response2, err2 := p.Request(context.Background(), seguimientos[i])
+		if err2 !=nil {
+			log.Fatalf("Error when calling Request: %s", err2)
+		}
+		log.Printf("Seguimiento: %d", seguimientos[i], " Estado: %+v ", response2.Estado)
+		time.Sleep(2*time.Second)
+	}
+}
+
+func main() {
+	//goroutines
+	wg.Add(2)
+	go send_orders()
+	go consultar_estado()
+	log.Println("[x] Ctrl + C para detener")
+	wg.Wait()
 }
