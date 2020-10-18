@@ -120,7 +120,7 @@ func consultar_estado() {
 	time.Sleep(10*time.Second)
 	//conexión
 	var conn *grpc.ClientConn
-	conn, err := grpc.Dial(":9000", grpc.WithInsecure())
+	conn, err := grpc.Dial("10.10.28.42:9000", grpc.WithInsecure())
 	if err != nil {
 		log.Fatalf("did not connect: %s", err)
 	}
@@ -135,7 +135,7 @@ func consultar_estado() {
 		 if  len(seguimientos) != 0{
 			i = rand.Intn(len(seguimientos))
 		}else{
-			fmt.Println("Esperando a que existan pedidos para consultar seguimientos")
+			fmt.Println("Esperando a que existan pedidos de pyme para consultar seguimientos")
 			time.Sleep(5*time.Second)
 		}
 	}
