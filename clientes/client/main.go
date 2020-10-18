@@ -62,7 +62,7 @@ func send_orders() {
 	
 		switch input {
 		case "pyme":
-			recordspyme, _ := leer("../../pymes.csv")
+			recordspyme, _ := leer("../pymes.csv")
 			for _, line := range recordspyme {
 				val, _ := strconv.ParseInt(line[2], 10, 64)
 				o := proto.Order{
@@ -88,7 +88,7 @@ func send_orders() {
 
 			}
 		case "retail":
-			recordsret, _ := leer("../../retail.csv")
+			recordsret, _ := leer("../retail.csv")
 			//aqui se envían las órdenes retail 1x1
 			for _, line := range recordsret {
 				val, _ := strconv.ParseInt(line[2], 10, 64)
