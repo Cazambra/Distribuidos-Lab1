@@ -8,28 +8,28 @@ import (
 	"os/signal"
 	"syscall"
 )
-var  inicial = 0
-var enviostot = 0
-var nocomplt = 0
+var  inicial = int64(0)
+var enviostot = int64(0)
+var nocomplt = int64(0)
 type packet struct {
-	Id string
-	Seguimiento string
-	Valor int
+	IdPacket string
+	Seguimiento int64
+	Valor int64
 	Tipo string
-	Intentos int
+	Intentos int64
 	Estado string
 }
 
-func financiero(inicial int, enviostot int, nocomplt int,paquete *packet) (int,int,int) {
-
+func financiero(inicial int64, enviostot int64, nocomplt int64,paquete *packet) (int64,int64,int64) {
+	fmt.Println(enviostot)
 	 enviostot +=  1	
 	 fmt.Println(paquete.Estado)
-	if paquete.Estado == "No Recibido"{
+	if paquete.Estado == "no recibido"{
 			nocomplt +=1
 
 	}
 
-	 inicial += paquete.Valor
+	 inicial += paquete.Valor - 10*(paquete.Intentos-1)
 	return inicial,enviostot,nocomplt
 
 }
@@ -40,7 +40,7 @@ func SetupCloseHandler() {
 		<-c
 		fmt.Println("Balance total: %d", inicial)
 		fmt.Println("Envios totales: %d", enviostot)
-		fmt.Println("Envios no Completados: %d", nocomplt)
+		fmt.Println("Envios no Recibidos: %d", nocomplt)
 		os.Exit(0)
 	}()
 }
@@ -54,7 +54,7 @@ func failOnError(err error, msg string) {
 func main() {
 	SetupCloseHandler()
 
-	conn, err := amqp.Dial("amqp://tete:moraga@10.10.28.42:5672/")
+	conn, err := amqp.Dial("amqp://guest:guest@localhost:5672/")
 	failOnError(err, "Failed to connect to RabbitMQ")
 	defer conn.Close()
 

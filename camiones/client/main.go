@@ -7,7 +7,7 @@ import (
 	"time"
 	"math/rand"
 
-	"golang.org/x/net/context"
+	context "context"
 	"google.golang.org/grpc"
 
 	proto "../../logistica/proto"

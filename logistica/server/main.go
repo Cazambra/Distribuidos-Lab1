@@ -8,6 +8,9 @@ import (
 	"time"
 	"strconv"
 	"container/list"
+	"encoding/json"
+	"github.com/streadway/amqp"
+
 	proto "../proto"
 	"google.golang.org/grpc"
 )
@@ -37,6 +40,12 @@ var paquetes []proto.Packet //slice con los paquetes
 var qR = list.New()
 var qP = list.New()
 var qN = list.New()
+
+func failOnError(err error, msg string) {
+	if err != nil {
+		log.Fatalf("%s: %s", msg, err)
+	}
+}
 
 //Ready ...
 func (s *Server) Ready(ctx context.Context,adv *proto.ReadyAdvice) (*proto.Deliver, error){
@@ -120,7 +129,58 @@ func (s *Server) Delivered(ctx context.Context,deli *proto.Deliver) (*proto.Repl
 			continue
 		}
 	}
+	
 	//mandar a financiero
+	conn, err := amqp.Dial("amqp://guest:guest@localhost:5672/")
+	failOnError(err, "Failed to connect to RabbitMQ")
+	defer conn.Close()
+
+	ch, err := conn.Channel()
+
+	failOnError(err, "Failed to open a channel")
+	defer ch.Close()
+
+	q, err := ch.QueueDeclare(
+		"financiero", // name
+		false,   // durable
+		false,   // delete when unused
+		false,   // exclusive
+		false,   // no-wait
+		nil,     // arguments
+	)
+
+	failOnError(err, "Failed to declare a queue")	
+	fmt.Println("holita")
+	body := *deli.Primero
+	b,err := json.Marshal(body)
+
+	err = ch.Publish(
+		"",     // exchange
+		q.Name, // routing key
+		false,  // mandatory
+		false,  // immediate
+		amqp.Publishing{
+			ContentType: "text/json",
+			Body:       []byte(b),
+		})
+	log.Printf(" [x] Sent %+v", body)
+	failOnError(err, "Failed to publish a message")
+
+	body2 := *deli.Segundo
+	b2,err := json.Marshal(body2)
+
+	err = ch.Publish(
+		"",     // exchange
+		q.Name, // routing key
+		false,  // mandatory
+		false,  // immediate
+		amqp.Publishing{
+			ContentType: "text/json",
+			Body:       []byte(b2),
+		})
+	log.Printf(" [x] Sent %+v", body2)
+	failOnError(err, "Failed to publish a message")
+
 
 	return &proto.ReplySeguimiento{Estado: ""}, nil
 }
@@ -210,16 +270,6 @@ func main() {
 		log.Fatalf("failed to serve: %s", err)
 	}
 
-	lis1, err1 := net.Listen("tcp", ":9001")
-	if err1 != nil {
-		log.Fatalf("failed to listen: %v", err1)
-	}
-
-	grpcServer1 := grpc.NewServer()
-	proto.RegisterLogisticaServiceServer(grpcServer1, &Server{})
-
-	if err1 := grpcServer1.Serve(lis1); err1 != nil {
-		log.Fatalf("failed to serve: %s", err1)
-	}	
 
 }
+
