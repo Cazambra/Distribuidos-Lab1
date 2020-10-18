@@ -57,14 +57,14 @@ func (s *Server) Ready(ctx context.Context,adv *proto.ReadyAdvice) (*proto.Deliv
 			case true:
 				if qR.Len() == 0 && qP.Len() == 0 {
 					fmt.Println("Camión ",adv.Tipo, " esperando")
-					time.Sleep(5*time.Second)
+					time.Sleep(8*time.Second)
 					continue
 
 				}
 			case false:
 				if qR.Len() == 0{
 					fmt.Println("Camión ",adv.Tipo, " esperando")
-					time.Sleep(5*time.Second)
+					time.Sleep(8*time.Second)
 					continue
 				}
 		}
@@ -98,7 +98,7 @@ func (s *Server) Ready(ctx context.Context,adv *proto.ReadyAdvice) (*proto.Deliv
 		case "Normal":
 			if qP.Len() == 0 && qN.Len()==0{
 				fmt.Println("Camión ",adv.Tipo, " esperando")
-				time.Sleep(5*time.Second)
+				time.Sleep(8*time.Second)
 				continue
 			}
 
