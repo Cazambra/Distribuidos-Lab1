@@ -8,7 +8,7 @@ import (
 	"os/signal"
 	"syscall"
 )
-var  inicial = int64(0)
+var  inicial = float64(0)
 var enviostot = int64(0)
 var nocomplt = int64(0)
 type packet struct {
@@ -20,19 +20,36 @@ type packet struct {
 	Estado string
 }
 
-func financiero(inicial int64, enviostot int64, nocomplt int64,paquete *packet) (int64,int64,int64) {
-	fmt.Println(enviostot)
-	 enviostot +=  1	
-	 fmt.Println(paquete.Estado)
-	if paquete.Estado == "no recibido"{
+func financiero(inicial float64, enviostot int64, nocomplt int64,paquete *packet) (float64,int64,int64) {
+	enviostot +=  1	
+	switch paquete.Tipo{
+	case "prioritario":
+		if paquete.Estado == "no recibido"{
+				nocomplt +=1
+				inicial += float64(paquete.Valor) * float64(0.3) - float64(10*(paquete.Intentos-1))
+		
+		}else{
+			inicial += float64(paquete.Valor) + float64(paquete.Valor) *float64(0.3)- float64(10*(paquete.Intentos-1))
+			}	
+	case "normal":
+		if paquete.Estado == "no recibido"{
+			nocomplt += 1
+			inicial -= float64(10*(paquete.Intentos-1))
+		}else{
+			inicial += float64(paquete.Valor - 10*(paquete.Intentos-1))
+		}
+	case "retail":
+		if paquete.Estado == "no recibido"{
 			nocomplt +=1
-
+		}
+		inicial += float64(paquete.Valor - 20)
 	}
 
-	 inicial += paquete.Valor - 10*(paquete.Intentos-1)
+	
 	return inicial,enviostot,nocomplt
 
 }
+
 func SetupCloseHandler() {
 	c := make(chan os.Signal)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
@@ -91,13 +108,13 @@ func main() {
 			err := json.Unmarshal(d.Body,&m)
 			inicial,enviostot,nocomplt = financiero(inicial,enviostot,nocomplt,m)
 
-			fmt.Println("Received a message: %+v", m)
+			fmt.Println("Recibido desde logística: %+v", m)
 			failOnError(err,"FaileD to receive message")
 		}
 	}()
 
 
-	log.Println(" [*] Waiting for messages. To exit press CTRL+C")
+	log.Println(" [*] Esperando paquetes. To exit press CTRL+C")
 	<-forever
 	
 

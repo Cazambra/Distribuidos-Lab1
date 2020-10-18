@@ -16,11 +16,14 @@ import (
 type Camion struct {
 	tipo string //r1, r2 o normal
 	status bool
+	UltRet bool
 }
 
 var wg sync.WaitGroup
 
-func Reparto(camion Camion) proto.Deliver {
+func Reparto(camion Camion) int {
+
+	for true{
 
 	var conn *grpc.ClientConn
 	conn, err := grpc.Dial(":9000", grpc.WithInsecure())
@@ -33,9 +36,9 @@ func Reparto(camion Camion) proto.Deliver {
 
 	adv := proto.ReadyAdvice{
 		Tipo: camion.tipo,
-		UltRet: false,
+		UltRet: camion.UltRet,
 	}
-	log.Println("camion yendo: %s", camion.tipo)
+	log.Println("Camión listo: %s", camion.tipo)
 	time.Sleep(time.Second)
 
 	packets, err := p.Ready(context.Background(), &adv)
@@ -63,6 +66,7 @@ func Reparto(camion Camion) proto.Deliver {
 					}
 				}
 			}
+			pen = 0
 			for (packets.Segundo.Estado == "no recibido" ||packets.Segundo.Estado == "en camino") && packets.Segundo.GetValor() > pen && packets.Segundo.Intentos < 2{
 				prob := rand.Intn(10)
 				if prob <= 7 {
@@ -95,6 +99,7 @@ func Reparto(camion Camion) proto.Deliver {
 					}
 				}
 			}
+			pen = 0
 			for (packets.Segundo.Estado == "no recibido" ||packets.Segundo.Estado == "en camino")	&& packets.Segundo.Intentos < 3{
 				prob := rand.Intn(10)
 				if prob <= 7 {
@@ -130,6 +135,7 @@ func Reparto(camion Camion) proto.Deliver {
 						}
 					}
 				}
+				pen = 0
 				for (packets.Segundo.Estado == "no recibido" ||packets.Segundo.Estado == "en camino")	&& packets.Segundo.GetValor() > pen && packets.Segundo.Intentos < 2{
 					prob := rand.Intn(10)
 					if prob <= 7 {
@@ -162,6 +168,7 @@ func Reparto(camion Camion) proto.Deliver {
 						}
 					}
 				}
+				pen = 0
 				for (packets.Segundo.Estado == "no recibido" ||packets.Segundo.Estado == "en camino")	&& packets.Segundo.Intentos < 3{
 					prob := rand.Intn(10)
 					if prob <= 7 {
@@ -183,8 +190,13 @@ func Reparto(camion Camion) proto.Deliver {
 	if err != nil {
 		log.Fatalf("Error when calling Request: %s", err)
 	}
+	if packets.Primero.GetTipo() == "retail" || packets.Segundo.GetTipo()== "retail"{
+		camion.UltRet = true
+	}
+	time.Sleep(5*time.Second)
+}
 	defer wg.Done()
-	return *packets
+	return 0
 }
 
 func main()  {
@@ -204,7 +216,7 @@ func main()  {
 		status: true,
 	}
 
-	for i := 1; i < 3; i++ {
+
 		wg.Add(3)
 		go Reparto(camion_r1)
 		time.Sleep(time.Second)
@@ -213,7 +225,7 @@ func main()  {
 		go Reparto(camion_n)
 		wg.Wait()
 		time.Sleep(3*time.Second)
-	}
+	
 	
 	fmt.Println("main finish")
 }

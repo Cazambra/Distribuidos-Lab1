@@ -54,12 +54,12 @@ func send_orders() {
 		log.Fatalf("did not connect: %s", err)
 	}
 	defer conn.Close()
-
+	for true {
 	fmt.Println("Ingrese tipo de cliente (pyme/retail): ")
 	var input string;
 	fmt.Scanln(&input)
 
-	for true {
+	
 		switch input {
 		case "pyme":
 			recordspyme, _ := leer("../../pymes.csv")
@@ -81,9 +81,9 @@ func send_orders() {
 				if err !=nil {
 					log.Fatalf("Error when calling Request: %s", err)
 				}
-				log.Printf("Orden enviada: %s ", o.GetId(), " número de seguimiento: %d", response.Seguimiento)
+				fmt.Println("Orden enviada: %s ", o.GetId(), " número de seguimiento: %d", response.GetSeguimiento())
 
-				seguimientos = append(seguimientos, response.Seguimiento)
+				seguimientos = append(seguimientos, response.GetSeguimiento())
 				time.Sleep(time.Second)
 
 			}
@@ -104,11 +104,11 @@ func send_orders() {
 				p := proto.NewLogisticaServiceClient(conn)
 
 				//se envia la orden
-				response, err := p.SendOrder(context.Background(), &o)
+				_, err := p.SendOrder(context.Background(), &o)
 				if err !=nil {
 					log.Fatalf("Error when calling Request: %s", err)
 				}
-				log.Printf("Orden enviada: %s ", o.GetId())
+				fmt.Println("Orden enviada: %s ", o.GetId())
 				time.Sleep(time.Second)
 			}
 		}
@@ -130,12 +130,24 @@ func consultar_estado() {
 
 	//se consulta por el estado
 	for true{
-		i := rand.Intn(range seguimientos)
-		response2, err2 := p.Request(context.Background(), seguimientos[i])
+		i := 0
+		for i == 0{
+		 if  len(seguimientos) != 0{
+			i = rand.Intn(len(seguimientos))
+		}else{
+			fmt.Println("Esperando a que existan pedidos para consultar seguimientos")
+			time.Sleep(5*time.Second)
+		}
+	}
+
+		q := proto.QuerySeguimiento{
+			Seguimiento: seguimientos[i],
+		}
+		response2, err2 := p.Request(context.Background(), &q)
 		if err2 !=nil {
 			log.Fatalf("Error when calling Request: %s", err2)
 		}
-		log.Printf("Seguimiento: %d", seguimientos[i], " Estado: %+v ", response2.Estado)
+		fmt.Println("Seguimiento: %d", seguimientos[i], " Estado: %+v ", response2.Estado)
 		time.Sleep(2*time.Second)
 	}
 }

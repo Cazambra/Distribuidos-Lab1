@@ -50,10 +50,24 @@ func failOnError(err error, msg string) {
 //Ready ...
 func (s *Server) Ready(ctx context.Context,adv *proto.ReadyAdvice) (*proto.Deliver, error){
 	deli := proto.Deliver{}
-
 	for deli.Segundo == nil { //agregar OR para tiempo de espera
 		switch adv.Tipo {
 		case "Retail 1", "Retail 2":
+			switch adv.GetUltRet(){
+			case true:
+				if qR.Len() == 0 && qP.Len() == 0 {
+					fmt.Println("Camión ",adv.Tipo, " esperando")
+					time.Sleep(5*time.Second)
+					continue
+
+				}
+			case false:
+				if qR.Len() == 0{
+					fmt.Println("Camión ",adv.Tipo, " esperando")
+					time.Sleep(5*time.Second)
+					continue
+				}
+		}
 			if adv.GetUltRet() {
 				if qR.Len() == 0 {
 					packet := qP.Front()
@@ -82,6 +96,12 @@ func (s *Server) Ready(ctx context.Context,adv *proto.ReadyAdvice) (*proto.Deliv
 				qR.Remove(packet)
 			}
 		case "Normal":
+			if qP.Len() == 0 && qN.Len()==0{
+				fmt.Println("Camión ",adv.Tipo, " esperando")
+				time.Sleep(5*time.Second)
+				continue
+			}
+
 			if qP.Len() == 0 {
 				packet := qN.Front()
 				if deli.Primero == nil {
@@ -102,7 +122,7 @@ func (s *Server) Ready(ctx context.Context,adv *proto.ReadyAdvice) (*proto.Deliv
 		}
 	}
 	log.Println("Saliendo paquetes: %s", deli.Primero.GetIdPacket(), deli.Segundo.GetIdPacket())
-	//HAY QUE ACTUALIZAR EL ESTADO DE LOS PAQUETES QUE SALEN (!)
+	//HAY QUE ACTUALIZAR EL ESTADO DE LOS PAQUETES QUE SALen (!)
 	for i := range paquetes{
 		if  paquetes[i].GetIdPacket() == deli.Primero.GetIdPacket(){
 			paquetes[i].Estado = "en camino"
@@ -150,7 +170,6 @@ func (s *Server) Delivered(ctx context.Context,deli *proto.Deliver) (*proto.Repl
 	)
 
 	failOnError(err, "Failed to declare a queue")	
-	fmt.Println("holita")
 	body := *deli.Primero
 	b,err := json.Marshal(body)
 
@@ -163,7 +182,7 @@ func (s *Server) Delivered(ctx context.Context,deli *proto.Deliver) (*proto.Repl
 			ContentType: "text/json",
 			Body:       []byte(b),
 		})
-	log.Printf(" [x] Sent %+v", body)
+	fmt.Println("Enviando a Financiero:  %+v", body.String())
 	failOnError(err, "Failed to publish a message")
 
 	body2 := *deli.Segundo
@@ -178,7 +197,7 @@ func (s *Server) Delivered(ctx context.Context,deli *proto.Deliver) (*proto.Repl
 			ContentType: "text/json",
 			Body:       []byte(b2),
 		})
-	log.Printf(" [x] Sent %+v", body2)
+	fmt.Println("Enviando a Financiero:  %+v", body2.String())
 	failOnError(err, "Failed to publish a message")
 
 
@@ -191,8 +210,8 @@ func (s *Server) Request(ctx context.Context, num_seguimiento *proto.QuerySeguim
 	//aqui hay que consultar por el .estado de los PAQUETES
 	var status string
 	for i := range paquetes {
-		if paquetes[i].Seguimiento == num_seguimiento.Seguimiento {
-			status = paquetes[i].Estado
+		if paquetes[i].GetSeguimiento() == num_seguimiento.GetSeguimiento() {
+			status = paquetes[i].GetEstado()
 		} 
 	}
 	return &proto.ReplySeguimiento{Estado: status}, nil
