@@ -49,7 +49,7 @@ func leer (path string) ([][]string, error) {
 func send_orders() {
 	//conexión
 	var conn *grpc.ClientConn
-	conn, err := grpc.Dial(":9000", grpc.WithInsecure())
+	conn, err := grpc.Dial("10.10.28.42:9000", grpc.WithInsecure())
 	if err != nil {
 		log.Fatalf("did not connect: %s", err)
 	}
