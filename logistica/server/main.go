@@ -40,63 +40,79 @@ var qN = list.New()
 
 //Ready ...
 func (s *Server) Ready(ctx context.Context,adv *proto.ReadyAdvice) (*proto.Deliver, error){
-	deli := proto.Deliver{
-		Primero: "",
-		Segundo: "",
-	}
+	deli := proto.Deliver{}
 
-	for deli.Segundo == "" { //agregar OR para tiempo de espera
+	for deli.Segundo == nil { //agregar OR para tiempo de espera
 		switch adv.Tipo {
 		case "Retail 1", "Retail 2":
 			if adv.GetUltRet() {
 				if qR.Len() == 0 {
 					packet := qP.Front()
-					if deli.Primero == "" {
-						deli.Primero = packet.Value.(string)
+					if deli.Primero == nil {
+						deli.Primero = packet.Value.(*proto.Packet)
 					} else{
-						deli.Segundo = packet.Value.(string)
+						deli.Segundo = packet.Value.(*proto.Packet)
 					}
 					qP.Remove(packet)
 				} else {
 					packet := qR.Front()
-					if deli.Primero == "" {
-						deli.Primero = packet.Value.(string)
+					if deli.Primero == nil {
+						deli.Primero = packet.Value.(*proto.Packet)
 					} else{
-						deli.Segundo = packet.Value.(string)
+						deli.Segundo = packet.Value.(*proto.Packet)
 					}
 					qR.Remove(packet)
 				}
 			} else {
 				packet := qR.Front()
-				if deli.Primero == "" {
-					deli.Primero = packet.Value.(string)
+				if deli.Primero == nil{
+					deli.Primero = packet.Value.(*proto.Packet)
 				} else{
-					deli.Segundo = packet.Value.(string)
+					deli.Segundo = packet.Value.(*proto.Packet)
 				}
 				qR.Remove(packet)
 			}
 		case "Normal":
 			if qP.Len() == 0 {
 				packet := qN.Front()
-				if deli.Primero == "" {
-					deli.Primero = packet.Value.(string)
+				if deli.Primero == nil {
+					deli.Primero = packet.Value.(*proto.Packet)
 				} else{
-					deli.Segundo = packet.Value.(string)
+					deli.Segundo = packet.Value.(*proto.Packet)
 				}
 				qN.Remove(packet)	
 			} else {
 				packet := qP.Front()
-				if deli.Primero == "" {
-					deli.Primero = packet.Value.(string)
+				if deli.Primero == nil {
+					deli.Primero = packet.Value.(*proto.Packet)
 				} else{
-					deli.Segundo = packet.Value.(string)
+					deli.Segundo = packet.Value.(*proto.Packet)
 				}
 				qP.Remove(packet)	
 			}
 		}
 	}
+	log.Println("Saliendo paquetes: %s", deli.Primero.GetIdPacket(), deli.Segundo.GetIdPacket())
+	//HAY QUE ACTUALIZAR EL ESTADO DE LOS PAQUETES QUE SALEN (!)
+	for i := range paquetes{
+		if paquetes[i].GetIdPacket() == deli.Primero.GetIdPacket(){
+			paquetes[i].Estado = "en camino"
+			deli.Primero.Estado = "en camino"
+		} else if paquetes[i].GetIdPacket() == deli.Segundo.GetIdPacket(){
+			paquetes[i].Estado = "en camino"
+			deli.Segundo.Estado = "en camino"
+		} else{
+			continue
+		}
+	}
 	return &deli, nil
 }
+
+//Delievered ...
+func (s *Server) Delivered(ctx context.Context,deli *proto.Deliver) (*proto.ReplySeguimiento, error){
+	return &proto.ReplySeguimiento{Estado: "chupamelpico"}, nil
+}
+
 
 //Request ...
 func (s *Server) Request(ctx context.Context, num_seguimiento *proto.QuerySeguimiento) (*proto.ReplySeguimiento, error) {
@@ -158,12 +174,12 @@ func (s *Server) SendOrder(ctx context.Context, orden *proto.Order) (*proto.Quer
 	//se agregan a la cola los paquetes
 	switch new_pack.Tipo {
 	case "retail":
-		qR.PushBack(new_pack.IdPacket)
+		qR.PushBack(&new_pack)
 		//fmt.Println("%+v", qR.Back())
 	case "prioritario":
-		qP.PushBack(new_pack.IdPacket)
+		qP.PushBack(&new_pack)
 	case "normal":
-		qN.PushBack(new_pack.IdPacket)
+		qN.PushBack(&new_pack)
 	}
 	return &proto.QuerySeguimiento{Seguimiento: seguimiento}, nil
 }

@@ -45,13 +45,13 @@ message ReadyAdvice {
 }
 
 message Deliver {
-    string primero = 1;
-    string segundo = 2;
+    Packet primero = 1;
+    Packet segundo = 2;
 }
-
 
 service LogisticaService {
     rpc Request (QuerySeguimiento) returns (ReplySeguimiento);
     rpc SendOrder (Order) returns (QuerySeguimiento);
     rpc Ready (ReadyAdvice) returns (Deliver);
+    rpc Delivered (Deliver) returns (ReplySeguimiento);
 }
